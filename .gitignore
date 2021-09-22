@@ -19,5 +19,6 @@ pip-selfcheck.json
 .vscode/
 *.json
 *.mp4
+*.jpg
 
 # End of https://www.toptal.com/developers/gitignore/api/venv

@@ -1,5 +1,5 @@
 import argparse
-from pytube import YouTube, Playlist, request
+from pytube import YouTube, Playlist
 from pytube.streams import Stream
 import json
 import os
@@ -69,17 +69,17 @@ if args.playlist:
     PLAYLIST_URL = args.id
     video_properties = {}
     if os.path.exists(f'{PLAYLIST_URL}.json'):
-        with open(f'{PLAYLIST_URL}.json', 'r+') as json_in:
+        with open(f'{PLAYLIST_URL}.json', 'r+', encoding='utf8') as json_in:
             if json_in.read() is not None or json_in.read() != '':
                 video_properties = json.load(json_in)
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
     for video in playlist.videos:
         if args.descriptions:
             video_properties[video.embed_url.split(
-                '/')[-1]] = {'title': video.title, 'description': video.description}
+                '/')[-1]] = {'title': video.title, 'description': video.description.replace('\n', '\\n')}
         if args.thumbnails:
             url = video.thumbnail_url
-            with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}','wb') as thumbnail:
+            with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}', 'wb') as thumbnail:
                 r = requests.get(url)
                 thumbnail.write(r.content)
         if args.videos:
@@ -102,7 +102,7 @@ else:
             json.dump(video_properties, json_out, indent=4)
     if args.thumbnails:
         url = video.thumbnail_url
-        with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}','wb') as thumbnail:
+        with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}', 'wb') as thumbnail:
             r = requests.get(url)
             thumbnail.write(r.content)
     if args.videos:
