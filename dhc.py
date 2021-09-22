@@ -1,8 +1,9 @@
 import argparse
-from pytube import YouTube, Playlist
+from pytube import YouTube, Playlist, request
 from pytube.streams import Stream
 import json
 import os
+import requests
 
 ytparser = argparse.ArgumentParser(
     description='Download a whole yt playlist, or some of its attributes')
@@ -14,6 +15,8 @@ ytparser.add_argument('-d', '--descriptions', action='store_true',
                       help='gets descriptions')
 ytparser.add_argument('-p', '--playlist', action='store_true',
                       help='downloads a playlist')
+ytparser.add_argument(
+    '-t', '--thumbnails', action='store_true', help='gets thumbnails')
 ytparser.add_argument(
     '-v', '--videos', action='store_true', help='downloads videos')
 
@@ -74,8 +77,33 @@ if args.playlist:
         if args.descriptions:
             video_properties[video.embed_url.split(
                 '/')[-1]] = {'title': video.title, 'description': video.description}
+        if args.thumbnails:
+            url = video.thumbnail_url
+            with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}','wb') as thumbnail:
+                r = requests.get(url)
+                thumbnail.write(r.content)
         if args.videos:
             get_highest_resolution_stream(video).download()
     if args.descriptions:
         with open(f'{PLAYLIST_URL}.json', 'w') as json_out:
             json.dump(video_properties, json_out, indent=4)
+else:
+    VID_URL = args.id
+    video = YouTube(f'https://www.youtube.com/watch?v={args.id}')
+    video_properties = {}
+    if os.path.exists(f'{VID_URL}.json'):
+        with open(f'{VID_URL}.json', 'r+') as json_in:
+            if json_in.read() is not None or json_in.read() != '':
+                video_properties = json.load(json_in)
+    if args.descriptions:
+        video_properties[VID_URL] = {
+            'title': video.title, 'description': video.description}
+        with open(f'{VID_URL}.json', 'w') as json_out:
+            json.dump(video_properties, json_out, indent=4)
+    if args.thumbnails:
+        url = video.thumbnail_url
+        with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}','wb') as thumbnail:
+            r = requests.get(url)
+            thumbnail.write(r.content)
+    if args.videos:
+        get_highest_resolution_stream(video).download()
