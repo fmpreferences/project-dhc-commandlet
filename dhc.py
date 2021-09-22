@@ -26,6 +26,8 @@ representation
 i have no clue if it's borrowed (stolen) or not, i actually
 dont think it is bc i could have written something so ugly
 '''
+
+
 def readable_stream(stream: Stream) -> dict:
     properties = str(stream)[9:-1].split(' ')
     properties = [p.split('=') for p in properties]
@@ -40,6 +42,8 @@ def readable_stream(stream: Stream) -> dict:
 maybe a cleaner solution is here but this is the most
 readable to me
 '''
+
+
 def get_highest_resolution_stream(video: YouTube) -> Stream:
     if (streams := video.streams.filter(file_extension='mp4')) is not None:
         itags = []
@@ -60,13 +64,14 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
 refactored'''
 description_dict = {}
 if args.playlist:
+    PLAYLIST_URL = args.id
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
-    FILE_NAME_PRE = playlist.title+args.id
     for video in playlist.videos:
         if args.descriptions:
-            description_dict[video.embed_url] = video.description
+            description_dict[video.embed_url.split(
+                '/')[-1]] = video.description
         if args.videos:
             get_highest_resolution_stream(video).download()
     if args.descriptions:
-        with open(f'{FILE_NAME_PRE}_descriptions.json') as descriptions:
-            json.dump(description_dict,descriptions)
+        with open(f'{PLAYLIST_URL}_descriptions.json', 'w') as descriptions:
+            json.dump(description_dict, descriptions)
