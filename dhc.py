@@ -14,8 +14,6 @@ ytparser.add_argument('-d', '--descriptions', action='store_true',
 ytparser.add_argument('-p', '--playlist', action='store_true',
                       help='downloads a playlist')
 ytparser.add_argument(
-    '-t', '--titles', action='store_true', help='gets titles')
-ytparser.add_argument(
     '-v', '--videos', action='store_true', help='downloads videos')
 
 args = ytparser.parse_args()
@@ -62,16 +60,18 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
 '''script also from og version
 
 refactored'''
-description_dict = {}
+
 if args.playlist:
     PLAYLIST_URL = args.id
+    with open(f'{PLAYLIST_URL}.json', 'rw') as json_in:
+        video_properties = json.load(json_in)
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
     for video in playlist.videos:
         if args.descriptions:
-            description_dict[video.embed_url.split(
-                '/')[-1]] = video.description
+            video_properties[video.embed_url.split(
+                '/')[-1]] = {'title': video.title, 'description': video.description}
         if args.videos:
             get_highest_resolution_stream(video).download()
     if args.descriptions:
-        with open(f'{PLAYLIST_URL}_descriptions.json', 'w') as descriptions:
-            json.dump(description_dict, descriptions)
+        with open(f'{PLAYLIST_URL}.json', 'w') as json_out:
+            json.dump(video_properties, json_out)
