@@ -23,10 +23,8 @@ args = ytparser.parse_args()
 representation
 
 i have no clue if it's borrowed (stolen) or not, i actually
-dont think it is bc i could have written something so trash
+dont think it is bc i could have written something so ugly
 '''
-
-
 def readable_stream(stream: Stream) -> dict:
     properties = str(stream)[9:-1].split(' ')
     properties = [p.split('=') for p in properties]
@@ -41,8 +39,6 @@ def readable_stream(stream: Stream) -> dict:
 maybe a cleaner solution is here but this is the most
 readable
 '''
-
-
 def get_highest_resolution_stream(video: YouTube) -> Stream:
     if (streams := video.streams.filter(file_extension='mp4')) is not None:
         itags = []
@@ -60,7 +56,7 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
 
 '''script also from og version
 
-ok.'''
+refactored'''
 if args.playlist:
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
     for video in playlist.videos:
