@@ -2,6 +2,7 @@ import argparse
 from pytube import YouTube, Playlist
 from pytube.streams import Stream
 import json
+import os
 
 ytparser = argparse.ArgumentParser(
     description='Download a whole yt playlist, or some of its attributes')
@@ -63,8 +64,11 @@ refactored'''
 
 if args.playlist:
     PLAYLIST_URL = args.id
-    with open(f'{PLAYLIST_URL}.json', 'rw') as json_in:
-        video_properties = json.load(json_in)
+    video_properties = {}
+    if os.path.exists(f'{PLAYLIST_URL}.json'):
+        with open(f'{PLAYLIST_URL}.json', 'r+') as json_in:
+            if json_in.read() is not None or json_in.read() != '':
+                video_properties = json.load(json_in)
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
     for video in playlist.videos:
         if args.descriptions:
@@ -74,4 +78,4 @@ if args.playlist:
             get_highest_resolution_stream(video).download()
     if args.descriptions:
         with open(f'{PLAYLIST_URL}.json', 'w') as json_out:
-            json.dump(video_properties, json_out)
+            json.dump(video_properties, json_out, indent=4)
