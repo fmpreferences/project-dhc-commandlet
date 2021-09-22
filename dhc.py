@@ -36,21 +36,33 @@ def readable_stream(stream: Stream) -> dict:
     return d
 
 
+'''returns highest reso stream
+
+maybe a cleaner solution is here but this is the most
+readable
+'''
+
+
+def get_highest_resolution_stream(video: YouTube) -> Stream:
+    if (streams := video.streams.filter(file_extension='mp4')) is not None:
+        itags = []
+        resolutions = []
+        for s in streams:  # gets highest reso stream obj
+            streaminfo = readable_stream(s)
+            if 'res' in streaminfo:
+                itags.append(int(streaminfo['itag']))
+                resolutions.append(int(streaminfo['res'][:-1]))
+        return streams.get_by_itag(
+            itags[resolutions.index(max(resolutions))])
+    else:
+        raise ValueError('the object has no valid streams')
+
+
 '''script also from og version
 
 ok.'''
 if args.playlist:
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
     for video in playlist.videos:
-        if (streams := video.streams.filter(file_extension='mp4')) is not None:
-            itags = []
-            resolutions = []
-            for s in streams:  # gets highest reso stream obj
-                streaminfo = readable_stream(s)
-                if 'res' in streaminfo:
-                    itags.append(int(streaminfo['itag']))
-                    resolutions.append(int(streaminfo['res'][:-1]))
-            streams.get_by_itag(
-                itags[resolutions.index(max(resolutions))]).download()
-        else:
-            print('download failed')
+        if args.videos:
+            get_highest_resolution_stream(video).download()
