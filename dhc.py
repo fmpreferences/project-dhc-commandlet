@@ -1,6 +1,7 @@
 import argparse
 from pytube import YouTube, Playlist
 from pytube.streams import Stream
+import json
 
 ytparser = argparse.ArgumentParser(
     description='Download a whole yt playlist, or some of its attributes')
@@ -37,7 +38,7 @@ def readable_stream(stream: Stream) -> dict:
 '''returns highest reso stream
 
 maybe a cleaner solution is here but this is the most
-readable
+readable to me
 '''
 def get_highest_resolution_stream(video: YouTube) -> Stream:
     if (streams := video.streams.filter(file_extension='mp4')) is not None:
@@ -57,8 +58,15 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
 '''script also from og version
 
 refactored'''
+description_dict = {}
 if args.playlist:
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
+    FILE_NAME_PRE = playlist.title+args.id
     for video in playlist.videos:
+        if args.descriptions:
+            description_dict[video.embed_url] = video.description
         if args.videos:
             get_highest_resolution_stream(video).download()
+    if args.descriptions:
+        with open(f'{FILE_NAME_PRE}_descriptions.json') as descriptions:
+            json.dump(description_dict,descriptions)
