@@ -61,6 +61,15 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
         raise ValueError('the object has no valid streams')
 
 
+if args.channel:
+    api = 'https://youtube.googleapis.com/youtube/v3/'
+    headers = {'user-agent': 'project-dhc-abcdefghij'}
+    params = {'part': 'contentDetails,snippet', 'id': args.id, 'key': apikey}
+    channel_list = requests.get(api+'channels', params=params, headers=headers)
+    args.id = channel_list.json(
+    )['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+
+
 '''script also from og version
 
 refactored'''
