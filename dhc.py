@@ -1,4 +1,5 @@
 import argparse
+from typing import Dict
 from pytube import YouTube, Playlist
 from pytube.streams import Stream
 import json
@@ -70,49 +71,47 @@ if args.channel:
     )['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
 
+'''does all the necessary operations for this cmdlet to
+work
+
+made to remove duplicate code
+'''
+
+
+def video_helper(video:YouTube) -> dict:
+    global args
+    VID_URL = video.video_id
+    video_properties = {}
+    if args.descriptions:
+        video_properties[VID_URL] = {
+            'title': video.title, 'description': video.description}
+    if args.thumbnails:
+        url = video.thumbnail_url
+        with open(f'{video.title} {VID_URL}.{url.split(".")[-1]}', 'wb') as thumbnail:
+            r = requests.get(url)
+            thumbnail.write(r.content)
+    if args.videos:
+        get_highest_resolution_stream(video).download()
+    return video_properties
+
+
 '''script also from og version
 
 refactored'''
 
 if args.playlist:
     PLAYLIST_URL = args.id
-    video_properties = {}
-    if os.path.exists(f'{PLAYLIST_URL}.json'):
-        with open(f'{PLAYLIST_URL}.json', 'r+', encoding='utf8') as json_in:
-            if json_in.read() is not None or json_in.read() != '':
-                video_properties = json.load(json_in)
     playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
-    for video in playlist.videos:
-        if args.descriptions:
-            video_properties[video.embed_url.split(
-                '/')[-1]] = {'title': video.title, 'description': video.description.replace('\n', '\\n')}
-        if args.thumbnails:
-            url = video.thumbnail_url
-            with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}', 'wb') as thumbnail:
-                r = requests.get(url)
-                thumbnail.write(r.content)
-        if args.videos:
-            get_highest_resolution_stream(video).download()
+    vprops = [video_helper(video) for video in playlist]        
     if args.descriptions:
-        with open(f'{PLAYLIST_URL}.json', 'w') as json_out:
-            json.dump(video_properties, json_out, indent=4)
+        with open(f'{playlist.title} {PLAYLIST_URL}.json', 'w') as json_out:
+            json.dump(vprops, json_out, indent=4)
 else:
     VID_URL = args.id
-    video = YouTube(f'https://www.youtube.com/watch?v={args.id}')
-    video_properties = {}
-    if os.path.exists(f'{VID_URL}.json'):
-        with open(f'{VID_URL}.json', 'r+') as json_in:
-            if json_in.read() is not None or json_in.read() != '':
-                video_properties = json.load(json_in)
+    video = YouTube(f'https://www.youtube.com/watch?v={VID_URL}')
+    vprops = video_helper(video)
     if args.descriptions:
-        video_properties[VID_URL] = {
-            'title': video.title, 'description': video.description}
-        with open(f'{VID_URL}.json', 'w') as json_out:
-            json.dump(video_properties, json_out, indent=4)
-    if args.thumbnails:
-        url = video.thumbnail_url
-        with open(f'{video.embed_url.split("/")[-1]}.{url.split(".")[-1]}', 'wb') as thumbnail:
-            r = requests.get(url)
-            thumbnail.write(r.content)
-    if args.videos:
-        get_highest_resolution_stream(video).download()
+        with open(f'{video.title} {VID_URL}.json', 'w') as json_out:
+            json.dump(vprops, json_out, indent=4)
+
+
