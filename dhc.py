@@ -1,9 +1,8 @@
 import argparse
-from typing import Dict
 from pytube import YouTube, Playlist
+from pytube.contrib.channel import Channel
 from pytube.streams import Stream
 import json
-import os
 import requests
 
 ytparser = argparse.ArgumentParser(
@@ -62,15 +61,6 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
         raise ValueError('the object has no valid streams')
 
 
-if args.channel:
-    api = 'https://youtube.googleapis.com/youtube/v3/'
-    headers = {'user-agent': 'project-dhc-abcdefghij'}
-    params = {'part': 'contentDetails,snippet', 'id': args.id, 'key': apikey}
-    channel_list = requests.get(api+'channels', params=params, headers=headers)
-    args.id = channel_list.json(
-    )['items'][0]['contentDetails']['relatedPlaylists']['uploads']
-
-
 '''does all the necessary operations for this cmdlet to
 work
 
@@ -78,7 +68,7 @@ made to remove duplicate code
 '''
 
 
-def video_helper(video:YouTube) -> dict:
+def video_helper(video: YouTube) -> dict:
     global args
     VID_URL = video.video_id
     video_properties = {}
@@ -99,10 +89,16 @@ def video_helper(video:YouTube) -> dict:
 
 refactored'''
 
-if args.playlist:
+if args.playlist or args.channel:
+    playlist = None
     PLAYLIST_URL = args.id
-    playlist = Playlist(f'https://www.youtube.com/playlist?list={args.id}')
-    vprops = [video_helper(video) for video in playlist]        
+    if args.playlist:
+        playlist = Playlist(
+            f'https://www.youtube.com/playlist?list={PLAYLIST_URL}')
+    if args.channel:
+        playlist = Channel(
+            f'https://www.youtube.com/c/{PLAYLIST_URL}')
+    vprops = [video_helper(video) for video in playlist]
     if args.descriptions:
         with open(f'{playlist.title} {PLAYLIST_URL}.json', 'w') as json_out:
             json.dump(vprops, json_out, indent=4)
@@ -113,5 +109,3 @@ else:
     if args.descriptions:
         with open(f'{video.title} {VID_URL}.json', 'w') as json_out:
             json.dump(vprops, json_out, indent=4)
-
-
