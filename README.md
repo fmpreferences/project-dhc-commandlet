@@ -5,6 +5,7 @@ This is Project DHC, a project to download all videos from a channel (dhc stands
 There are probably more usable things than this so I encourage you to use anything else before resorting to this.
 
 ##Requirements:
+
 Python 3.8+
 
 pytube
