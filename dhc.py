@@ -97,10 +97,14 @@ if args.playlist or args.channel:
             f'https://www.youtube.com/playlist?list={PLAYLIST_URL}')
     if args.channel:
         playlist = Channel(
-            f'https://www.youtube.com/c/{PLAYLIST_URL}')
-    vprops = [video_helper(video) for video in playlist]
+            f'https://www.youtube.com/channel/{PLAYLIST_URL}')
+    vprops = [video_helper(video) for video in playlist.videos]
     if args.descriptions:
-        with open(f'{playlist.title} {PLAYLIST_URL}.json', 'w') as json_out:
+        if args.playlist:
+            fname = f'{playlist.title} {PLAYLIST_URL}.json'
+        if args.channel:
+            fname = f'{playlist.channel_name} {PLAYLIST_URL}.json'
+        with open(fname, 'w') as json_out:
             json.dump(vprops, json_out, indent=4)
 else:
     VID_URL = args.id
