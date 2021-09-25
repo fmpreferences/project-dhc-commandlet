@@ -23,14 +23,15 @@ ytparser.add_argument(
 args = ytparser.parse_args()
 
 
-'''returns highest reso stream
-
-maybe a cleaner solution is here but this is the most
-readable to me
-'''
-
-
 def get_highest_resolution_stream(video: YouTube) -> Stream:
+    '''returns highest resolution stream
+    of a given video
+
+    :param video:
+        the video whose streams to check
+    :returns:
+        the highest resolution stream
+    '''
     if (streams := video.streams.filter(file_extension='mp4')) is not None:
         itags = []
         for stream in streams:  # gets highest reso stream obj
@@ -41,14 +42,35 @@ def get_highest_resolution_stream(video: YouTube) -> Stream:
         raise ValueError('the object has no valid streams')
 
 
-'''does all the necessary operations for this cmdlet to
-work
+def get_highest_bitrate_audio(video: YouTube) -> Stream:
+    '''returns highest bitrate audio stream
+    of a given video
 
-made to remove duplicate code
-'''
+    :param video:
+        the video whose streams to check
+    :returns:
+        the highest bitrate stream
+    '''
+    if (streams := video.streams.filter(file_extension='mp3')) is not None:
+        itags = []
+        for stream in streams:  # gets highest reso stream obj
+            if stream.bitrate is not None:
+                itags.append((int(stream.itag), int(stream.bitrate)))
+        return streams.get_by_itag(max(itags, key=lambda x: x[1])[0])
+    else:
+        raise ValueError('the object has no valid streams')
 
 
-def video_helper(video: YouTube) -> dict:
+def _video_helper(video: YouTube) -> dict:
+    '''returns or downloads any requested flags
+    from the user. the "meat" of the program
+
+    :param video:
+        the video to operate on
+    :returns:
+        dictionary with all the requested
+        properties from the user
+    '''
     global args
     VID_URL = video.video_id
     video_properties = {}
@@ -67,10 +89,7 @@ def video_helper(video: YouTube) -> dict:
     return video_properties
 
 
-'''script also from og version
-
-refactored'''
-
+'''main method'''
 if args.playlist or args.channel:
     playlist = None
     PLAYLIST_URL = args.id
@@ -80,7 +99,7 @@ if args.playlist or args.channel:
     if args.channel:
         playlist = Channel(
             f'https://www.youtube.com/channel/{PLAYLIST_URL}')
-    vprops = [video_helper(video) for video in playlist.videos]
+    vprops = [_video_helper(video) for video in playlist.videos]
     if args.descriptions:
         if args.playlist:
             fname = f'{playlist.title} {PLAYLIST_URL}.json'
@@ -91,7 +110,7 @@ if args.playlist or args.channel:
 else:
     VID_URL = args.id
     video = YouTube(f'https://www.youtube.com/watch?v={VID_URL}')
-    vprops = video_helper(video)
+    vprops = _video_helper(video)
     if args.descriptions:
         with open(f'{video.title} {VID_URL}.json', 'w') as json_out:
             json.dump(vprops, json_out, indent=4)
