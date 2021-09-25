@@ -9,6 +9,8 @@ ytparser = argparse.ArgumentParser(
     description='Download a whole yt playlist, or some of its attributes')
 
 ytparser.add_argument('id', type=str, help='The list or video id')
+ytparser.add_argument('-a', '--audio', action='store_true',
+                      help='downloads audio')
 ytparser.add_argument('-c', '--channel', action='store_true',
                       help='downloads a channel (experimental)')
 ytparser.add_argument('-d', '--descriptions', action='store_true',
@@ -84,6 +86,10 @@ def _video_helper(video: YouTube) -> dict:
             thumbnail.write(r.content)
     if args.videos:
         s = get_highest_resolution_stream(video)
+        s.download(
+            filename=f'{video.title} {VID_URL}.{s.subtype}')
+    if args.audio:
+        s = get_highest_bitrate_audio(video)
         s.download(
             filename=f'{video.title} {VID_URL}.{s.subtype}')
     return video_properties
