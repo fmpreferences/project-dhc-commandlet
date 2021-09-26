@@ -6,6 +6,6 @@ There are probably more usable things than this so I encourage you to use anythi
 
 ## Requirements:
 
-Python 3.8+
+Python 3
 
 pytube
