@@ -1,9 +1,11 @@
 import argparse
+from typing import Optional
 from pytube import YouTube, Playlist
 from pytube.contrib.channel import Channel
 from pytube.streams import Stream
 import json
 import requests
+import re
 
 ytparser = argparse.ArgumentParser(
     description='Download a whole yt playlist, or some of its attributes')
@@ -13,6 +15,8 @@ ytparser.add_argument('-a', '--audio', action='store_true',
                       help='downloads audio')
 ytparser.add_argument('-c', '--channel', action='store_true',
                       help='downloads a channel (experimental)')
+ytparser.add_argument('-e', '--ext', '--extension',
+                      type=str, help='gets a specific extension')
 ytparser.add_argument('-d', '--descriptions', action='store_true',
                       help='gets descriptions')
 ytparser.add_argument('-p', '--playlist', action='store_true',
@@ -25,26 +29,35 @@ ytparser.add_argument(
 args = ytparser.parse_args()
 
 
-def get_highest_resolution_stream(video: YouTube) -> Stream:
+def get_highest_resolution_stream(video: YouTube, extension: Optional[str] = None) -> Stream:
     '''returns highest resolution stream
     of a given video
 
     :param video:
         the video whose streams to check
+    :param extension:
+        which extension to check for streams in
     :returns:
         the highest resolution stream
     '''
-    if (streams := video.streams.filter(file_extension='mp4')) is not None:
+    streams = None
+    if extension:
+        streams = video.streams.filter(
+            only_video=True, file_extension=extension)
+    else:
+        streams = video.streams.filter(only_video=True)
+    if streams:
         itags = []
         for stream in streams:  # gets highest reso stream obj
             if stream.resolution is not None:
-                itags.append((int(stream.itag), int(stream.resolution[:-1])))
+                itags.append((int(stream.itag), int(
+                    re.findall(r'\d+', stream.resolution)[0])))
         return streams.get_by_itag(max(itags, key=lambda x: x[1])[0])
     else:
         raise ValueError('the object has no valid streams')
 
 
-def get_highest_bitrate_audio(video: YouTube) -> Stream:
+def get_highest_bitrate_audio(video: YouTube, extension: Optional[str] = None) -> Stream:
     '''returns highest bitrate audio stream
     of a given video
 
@@ -53,11 +66,18 @@ def get_highest_bitrate_audio(video: YouTube) -> Stream:
     :returns:
         the highest bitrate stream
     '''
-    if (streams := video.streams.filter(file_extension='mp3')) is not None:
+    streams = None
+    if extension:
+        streams = video.streams.filter(
+            only_audio=True, file_extension=extension)
+    else:
+        streams = video.streams.filter(only_audio=True)
+    if streams:
         itags = []
-        for stream in streams:  # gets highest reso stream obj
-            if stream.bitrate is not None:
-                itags.append((int(stream.itag), int(stream.bitrate)))
+        for stream in streams:
+            if stream.abr is not None:
+                itags.append((int(stream.itag), int(
+                    re.findall(r'\d+', stream.abr)[0])))
         return streams.get_by_itag(max(itags, key=lambda x: x[1])[0])
     else:
         raise ValueError('the object has no valid streams')
@@ -85,11 +105,19 @@ def _video_helper(video: YouTube) -> dict:
             r = requests.get(url)
             thumbnail.write(r.content)
     if args.videos:
-        s = get_highest_resolution_stream(video)
+        ext = args.ext
+        if ext:
+            s = get_highest_resolution_stream(video, ext)
+        else:
+            s = get_highest_resolution_stream(video)
         s.download(
             filename=f'{video.title} {VID_URL}.{s.subtype}')
     if args.audio:
-        s = get_highest_bitrate_audio(video)
+        ext = args.ext
+        if ext:
+            s = get_highest_bitrate_audio(video, ext)
+        else:
+            s = get_highest_bitrate_audio(video)
         s.download(
             filename=f'{video.title} {VID_URL}.{s.subtype}')
     return video_properties
